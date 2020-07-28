@@ -1,4 +1,8 @@
 #!/bin/bash
+if [ -z ${ROLE_ARN} ]; then read -p "Role ARN:" ROLE_ARN; fi
+if [ -z ${KMS_KEY_ID} ]; then read -p "KMS KEY ID:" KMS_KEY_ID; fi
+read -p "Team Name:" TEAM_NAME
+if [ -z ${LASTPASS_USERNAME} ]; then read -p "Lastpass Username:" LASTPASS_USERNAME; fi
 set -euo pipefail
 if [ "`aws iam list-users | jq '.Users[] | select(.UserName == "break.the.seal.user")'`" != "" ]
 then
@@ -9,15 +13,10 @@ then
   aws iam delete-virtual-mfa-device --serial-number $mfa_device
   aws iam delete-user --user-name break.the.seal.user
 fi
-
-if [ -z ${CENTRAL_ACCOUNT_NUMBER} ]; then read -p "Central Account Number:" CENTRAL_ACCOUNT_NUMBER; fi
-if [ -z ${KMS_KEY_ID} ]; then read -p "KMS KEY ID:" KMS_KEY_ID; fi
-read -p "Team Name:" TEAM_NAME
-if [ -z ${LASTPASS_USERNAME} ]; then read -p "Lastpass Username:" LASTPASS_USERNAME; fi
 lpass login $LASTPASS_USERNAME
 pip install -r requirements.txt
 awsaccountalias=`aws iam list-account-aliases | jq -r '.AccountAliases[]'`
-python create-user.py $TEAM_NAME $awsaccountalias $CENTRAL_ACCOUNT_NUMBER $KMS_KEY_ID
+python create-user.py $TEAM_NAME $awsaccountalias $KMS_KEY_ID $ROLE_ARN
 NEW_PASS=`lpass generate password 20`
 echo "setting password for $awsaccountalias"
 aws iam create-login-profile --user-name break.the.seal.user --password $NEW_PASS --no-password-reset-required

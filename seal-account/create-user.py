@@ -1,5 +1,5 @@
 
-"""Usage: create-user.py TEAM_NAME ACCOUNT_ALIAS
+"""Usage: create-user.py TEAM_NAME ACCOUNT_ALIAS KMS_KEY_ID ROLE_ARN
 
 Provisions admin user and stores credentials.
 Arguments:
