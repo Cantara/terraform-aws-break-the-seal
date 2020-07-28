@@ -64,7 +64,7 @@ resource "aws_iam_role_policy" "permissions_to_process_unlock" {
 
 resource "aws_iam_role_policy" "lambda_invoke_to_process_unlock" {
   policy = data.aws_iam_policy_document.lambda_invoke_for_process_unlock.json
-  role = aws_iam_role.process_unlock.id
+  role   = aws_iam_role.process_unlock.id
 }
 
 resource "aws_iam_role_policy_attachment" "base_permissions_to_lambda" {
@@ -89,17 +89,17 @@ resource "aws_iam_role_policy" "logs_to_ecs" {
 
 resource "aws_iam_role_policy" "pass_role_to_push_back_task" {
   policy = data.aws_iam_policy_document.pass_role_for_push_back_task.json
-  role = module.push_back_task.lambda_exec_role_id
+  role   = module.push_back_task.lambda_exec_role_id
 }
 
 resource "aws_iam_role_policy" "s3_to_push_back_task" {
   policy = data.aws_iam_policy_document.s3_for_push_back_task.json
-  role = aws_iam_role.push_back_task_role.id
+  role   = aws_iam_role.push_back_task_role.id
 }
 
 resource "aws_iam_role_policy" "ssm_and_kms_to_push_back_task" {
   policy = data.aws_iam_policy_document.ssm_and_kms_for_push_back_task.json
-  role = aws_iam_role.push_back_task_role.id
+  role   = aws_iam_role.push_back_task_role.id
 }
 
 locals {
@@ -111,7 +111,7 @@ locals {
       task_execution_role_arn = "${var.name_prefix}-ECSTaskExecutionRole"
       "task_role_arn"         = "${var.name_prefix}-single-use-tasks"
       "image"                 = "vydev/awscli:1.18.105"
-      "fargate_lambda_name"    = module.push_back_task.function_name
+      "fargate_lambda_name"   = module.push_back_task.function_name
     }
   )
 }

@@ -52,13 +52,13 @@ data "aws_iam_policy_document" "permissions_for_process_unlock" {
 #######
 data "aws_iam_policy_document" "push_params_for_push_ssm_params" {
   statement {
-    effect = "Allow"
-    actions = ["ssm:PutParameter"]
+    effect    = "Allow"
+    actions   = ["ssm:PutParameter"]
     resources = ["arn:aws:ssm:eu-west-1:${data.aws_caller_identity.current.account_id}:parameter/break-the-seal/*"]
   }
   statement {
-    effect = "Allow"
-    actions = ["kms:Encrypt"]
+    effect    = "Allow"
+    actions   = ["kms:Encrypt"]
     resources = [var.parameters_key_arn]
   }
 }
@@ -67,8 +67,8 @@ data "aws_iam_policy_document" "push_ssm_params_assume" {
   statement {
     effect = "Allow"
     principals {
-      type = "AWS"
-      identifiers = formatlist("arn:aws:iam::%s:root",var.trusted_accounts)
+      type        = "AWS"
+      identifiers = formatlist("arn:aws:iam::%s:root", var.trusted_accounts)
     }
     actions = [
       "sts:AssumeRole"
@@ -89,8 +89,8 @@ data "aws_iam_policy_document" "ecs_assume" {
 
 data "aws_iam_policy_document" "lambda_invoke_for_process_unlock" {
   statement {
-    effect = "Allow"
-    actions = ["lambda:InvokeFunction"]
+    effect    = "Allow"
+    actions   = ["lambda:InvokeFunction"]
     resources = ["arn:aws:lambda:${local.current_region}:${data.aws_caller_identity.current.account_id}:function:${module.push_back_task.function_name}"]
   }
 }
