@@ -16,16 +16,19 @@ to a specified GitHub repository can request to have the MFA seed emailed to the
 1. In the init folder Create a terraform script that uses the modules/init submodule and run it once (and only once) 
 to create a key for encrypting parameters
 1. Note the parameters_key_arn output from the last step
-1. In the <your_envirnoment> folder create a terraform script that uses the main module and use the value recorded 
+1. Add the private part of the key pair as a secure string encrypted with the parameters key to parameter store in 
+the central account to a parameter called break-the-seal-git-deploy-key
+1. In the <your_environment> folder create a terraform script that uses the main module and use the value recorded 
 in step 4 for the parameters_key_arn parameter
-1. Add the accountnumbers of any accounts you wish to use break-the-seal with to the trusted accounts parameter
+1. Add the account numbers of any accounts you wish to use break-the-seal with to the trusted accounts parameter
 1. Run terraform apply to deploy Break-The-Seal
 1. Add the following secrets to the GitHub break-the-seal requests repository - terraform created a limited CI user
 and recorded the credentials in parameter store
     * AWS_ACCESS_KEY_ID (get this value from parameter store where the terraform put it)
     * AWS_SECRET_ACCESS_KEY (get this value from parameter store where the terraform put it)
     * DEPLOY_KEY (this is the private! part of the deploy key you added earlier)
-1. Add the file below to the break-the-seal requests repository
+1. Add the file below to the break-the-seal requests repository and update the  <AWS ACCOUNT NUMBER> and <BUCKET NAME> 
+values to the central account number and the bucket created by the terraform script.
 1. Add `requests` and `processed-requests` folders to the break-the-seal requests repository
 1. Add empty placeholder files `placeholder` to the directories created so that the directories exist when checked out
 of git.
