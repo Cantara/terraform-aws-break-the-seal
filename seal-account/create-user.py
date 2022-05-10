@@ -1,38 +1,21 @@
-"""Usage: create-user.py TEAM_NAME ACCOUNT_ALIAS KMS_KEY_ID ROLE_ARN
+"""Create an IAM user with MFA and place the seed in SSM in common services"""
+import time
 
-Provisions admin user and stores credentials.
-Arguments:
-  TEAM_NAME     Name of the team that owns the account.
-  ACCOUNT_ALIAS Account alias of the account.
-  KMS_KEY_ID    Key ID of the KMS key to encrypt the MFA seed with.
-  ROLE_ARN      ARN of the role to assume in the central account for pushing MFA seeds
-Options:
-  -h --help
-"""
 import boto3
 import pyotp
-import time
-from docopt import docopt
 
-arguments = docopt(__doc__)
-kms_key_id = arguments['KMS_KEY_ID']
-role_arn = arguments['ROLE_ARN']
-
-iam_client = boto3.client('iam', region_name='eu-west-1')
-sts_client = boto3.client('sts')
-
-assumed_role_object = sts_client.assume_role(
-    RoleArn=role_arn,
-    RoleSessionName='BreakTheSeal'
+team_session = boto3.session.Session(
+    profile_name="bts-team",
+    region_name="eu-west-1"
 )
-credentials = assumed_role_object['Credentials']
-ssm_client = boto3.client(
-    'ssm',
-    region_name='eu-west-1',
-    aws_access_key_id=credentials['AccessKeyId'],
-    aws_secret_access_key=credentials['SecretAccessKey'],
-    aws_session_token=credentials['SessionToken'],
+common_services_session = boto3.session.Session(
+    profile_name="bts-common",
+    region_name="eu-west-1"
 )
+
+iam_client = team_session.client('iam')
+sts_client = team_session.client('sts')
+ssm_client = common_services_session.client('ssm')
 
 
 def create_user_with_mfa(username):
@@ -60,12 +43,12 @@ def enable_mfa(username, mfa_device):
 
 
 def publish_mfa_seed(seed: str):
-    account_id = boto3.client('sts').get_caller_identity()['Account']
+    account_id = sts_client.get_caller_identity()['Account']
     ssm_client.put_parameter(
         Name=f"/break-the-seal/{account_id}-mfa-seed",
         Description=f'MFA Seed for break.the.seal.user in {account_id}',
         Type='SecureString',
-        KeyId=kms_key_id,
+        KeyId="alias/Break-the-seal-parameters",
         Overwrite=True,
         Value=seed,
     )

@@ -1,25 +1,58 @@
 #!/bin/bash
-if [ -z ${ROLE_ARN} ]; then read -p "Role ARN:" ROLE_ARN; fi
-if [ -z ${KMS_KEY_ID} ]; then read -p "KMS KEY ID:" KMS_KEY_ID; fi
-read -p "Team Name:" TEAM_NAME
-if [ -z ${LASTPASS_USERNAME} ]; then read -p "Lastpass Username:" LASTPASS_USERNAME; fi
 set -euo pipefail
-if [ "`aws iam list-users | jq '.Users[] | select(.UserName == "break.the.seal.user")'`" != "" ]
+
+read -p "Team Account ID: " TEAM_ACCOUNT_ID
+read -p "Common Services Acocunt ID: " COMMON_ACCOUNT_ID
+
+aws --profile "bts-team" configure set azure_tenant_id "$(aws configure get azure_tenant_id)"
+aws --profile "bts-team" configure set azure_app_id_uri "$(aws configure get azure_app_id_uri)"
+aws --profile "bts-team" configure set azure_default_username "$(aws configure get azure_default_username)"
+aws --profile "bts-team" configure set azure_default_duration_hours "$(aws configure get azure_default_duration_hours)"
+aws --profile "bts-team" configure set azure_default_role_arn "arn:aws:iam::${TEAM_ACCOUNT_ID}:role/SAML-AdministratorRole"
+
+aws --profile "bts-common" configure set azure_tenant_id "$(aws configure get azure_tenant_id)"
+aws --profile "bts-common" configure set azure_app_id_uri "$(aws configure get azure_app_id_uri)"
+aws --profile "bts-common" configure set azure_default_username "$(aws configure get azure_default_username)"
+aws --profile "bts-common" configure set azure_default_duration_hours "$(aws configure get azure_default_duration_hours)"
+aws --profile "bts-common" configure set azure_default_role_arn "arn:aws:iam::${COMMON_ACCOUNT_ID}:role/SAML-AdministratorRole"
+
+# If we're in WSL, azure-aws-login doesn't work. This has to be done by the user in PS
+if grep -q WSL2 /proc/version; then
+  echo "Run the following commands in PowerShell:"
+  echo ""
+  echo "  " aws-azure-login --no-prompt --profile "bts-team"
+  echo "  " aws-azure-login --no-prompt --profile "bts-common"
+  echo ""
+  read -p "Please hit ENTER when you have RUN THE COMMANDS ABOVE IN POWERSHELL" HAS_RUN
+else
+  aws-azure-login --no-prompt --profile "bts-team"
+  aws-azure-login --no-prompt --profile "bts-common"
+fi
+
+read -p "Team Name:" TEAM_NAME
+
+read -p "Lastpass Username:" LASTPASS_USERNAME
+lpass login $LASTPASS_USERNAME
+
+
+if [ "`aws --profile "bts-team" iam list-users | jq '.Users[] | select(.UserName == "break.the.seal.user")'`" != "" ]
 then
   echo "Removing Old User"
-  aws iam delete-login-profile --user-name break.the.seal.user
-  mfa_device=`aws iam list-mfa-devices --user-name break.the.seal.user |jq -r .MFADevices[].SerialNumber`
-  aws iam deactivate-mfa-device --user-name break.the.seal.user --serial-number $mfa_device
-  aws iam delete-virtual-mfa-device --serial-number $mfa_device
-  aws iam delete-user --user-name break.the.seal.user
+  aws --profile "bts-team" iam delete-login-profile --user-name break.the.seal.user
+  mfa_device=`aws --profile "bts-team" iam list-mfa-devices --user-name break.the.seal.user | jq -r .MFADevices[].SerialNumber`
+  aws --profile "bts-team" iam deactivate-mfa-device --user-name break.the.seal.user --serial-number $mfa_device
+  aws --profile "bts-team" iam delete-virtual-mfa-device --serial-number $mfa_device
+  aws --profile "bts-team" iam delete-user --user-name break.the.seal.user
 fi
-lpass login $LASTPASS_USERNAME
+
 pip install -r requirements.txt
-awsaccountalias=`aws iam list-account-aliases | jq -r '.AccountAliases[]'`
-python create-user.py $TEAM_NAME $awsaccountalias $KMS_KEY_ID $ROLE_ARN
+python create-user.py
+
+awsaccountalias=`aws --profile "bts-team" iam list-account-aliases | jq -r '.AccountAliases[]'`
+
 NEW_PASS=`lpass generate password 20`
 echo "setting password for $awsaccountalias"
-aws iam create-login-profile --user-name break.the.seal.user --password $NEW_PASS --no-password-reset-required
+aws --profile "bts-team" iam create-login-profile --user-name break.the.seal.user --password $NEW_PASS --no-password-reset-required
 echo "adding credentials to lastpass"
 lpass share create Shared-Break-The-Seal-${TEAM_NAME}
 lpass sync

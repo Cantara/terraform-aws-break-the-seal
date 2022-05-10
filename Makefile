@@ -7,7 +7,7 @@ default: help
 
 seal:
 	@echo "== Sealing Account =="
-	@docker run -v ${PWD}:/source -it --rm -e LASTPASS_USERNAME=${LASTPASS_USERNAME} -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} -e AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN} -w /source/seal-account ${DOCKER_IMAGE}:${DOCKER_TAG} /bin/bash create-sealed-user.sh
+	@docker run -v ${HOME}/.aws/:/root/.aws/ -v ${PWD}:/source -it --rm -w /source/seal-account ${DOCKER_IMAGE}:${DOCKER_TAG} /bin/bash create-sealed-user.sh
 
 package-lambda:
 	@echo "== Packaging Lambda =="
